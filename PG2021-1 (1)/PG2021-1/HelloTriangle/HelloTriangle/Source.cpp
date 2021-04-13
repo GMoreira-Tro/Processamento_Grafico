@@ -80,8 +80,8 @@ GLuint colorLoc, shaderID;
 
 const Ponto3d corDeFundo = Ponto3d(0.5f, 0.5f, 0.5f);
 
-const float DEG2RAD = 180. / 3.14159265358979323846f;
-const float RAD2DEG = 3.14159265358979323846f / 180.;
+const float RAD2DEG = 180. / 3.14159265358979323846f;
+const float DEG2RAD = 3.14159265358979323846f / 180.;
 
 void exercicio1();
 void exercicio2();
@@ -504,8 +504,18 @@ Imprime um triângulo de acordo com os vértices.
 */
 void desenhaTrianguloSemFundo(Ponto2d vertice1, Ponto2d vertice2, Ponto2d vertice3, Ponto3d contorno)
 {
-    desenhaTrianguloComContorno(vertice1, vertice2, vertice3,
-        Ponto3d(corDeFundo.x, corDeFundo.y, corDeFundo.z), contorno);
+    //Desenho do triângulo
+    //GL_TRIANGLES - preenchimento do triângulo
+    GLuint VAO = setupGeometry(vertice1, vertice2, vertice3);
+    glUseProgram(shaderID);
+    glBindVertexArray(VAO);
+    glDrawArrays(GL_POINTS, 0, 3);
+
+    // Chamada de desenho - drawcall
+    // CONTORNO - GL_LINE_LOOP
+    glUniform4f(colorLoc, contorno.x, contorno.y, contorno.z, 1.0f);
+    glDrawArrays(GL_LINE_LOOP, 0, 3);
+    glBindVertexArray(0);
 }
 
 /*
@@ -516,21 +526,31 @@ Imprime um círculo de acordo com um ponto inicial.
 */
 void desenhaCirculo(Ponto2d pontoInicial, Ponto3d cor, float fatorDeEscala)
 {
-    for (int i = 0; i < 3600; i++)
+    for (int i = 0; i < 360; i++)
     {
-        float angle = i * RAD2DEG;
-        float postAngle = (i + 1) * RAD2DEG;
+        float angle = i * DEG2RAD;
+        float postAngle = (i + 1) * DEG2RAD;
 
         desenhaTriangulo(
+            Ponto2d(pontoInicial.x, pontoInicial.y),
             Ponto2d(sin(angle) * fatorDeEscala + pontoInicial.x, cos(angle) * fatorDeEscala + pontoInicial.y),
             Ponto2d(sin(postAngle) * fatorDeEscala + pontoInicial.x, cos(postAngle) * fatorDeEscala + pontoInicial.y),
-            Ponto2d(pontoInicial.x, pontoInicial.y),
             Ponto3d(cor.x, cor.y, cor.z));
 
         glUniform4f(colorLoc, 1, 1, 1, 1);
-        glDrawArrays(GL_LINE_LOOP, 0, 2);
+        glDrawArrays(GL_LINE_LOOP, 1, 2);
         glBindVertexArray(0);
     }
+}
+
+void contorno(Ponto3d cor, int deslocamento, int quantBytes)
+{
+    for (int i = 0; i < quantBytes; i++)
+    {
+        glUniform4f(colorLoc, cor.x, cor.y, cor.z, 1);
+        glDrawArrays(GL_LINE_LOOP, deslocamento + i, 2);
+    }
+    glBindVertexArray(0);
 }
 
 void exercicio1()
@@ -561,7 +581,9 @@ void exercicio3()
 void exercicio4()
 {
     desenhaTriangulo(Ponto2d(-0.5, -0.5f), Ponto2d(-0.05f, -0.5f), Ponto2d(-0.05f, 0.5f), Ponto3d(0.4f, 0, 0.4f));
-    desenhaTriangulo(Ponto2d(-0.5, -0.5f), Ponto2d(-0.05f, 0.5f), Ponto2d(-0.5f, 0.5f), Ponto3d(0.4f, 0, 0.4f));
+    contorno(Ponto3d(1, 1, 1), 0, 2);
+    desenhaTriangulo(Ponto2d(-0.5, -0.5f), Ponto2d(-0.5f, 0.5f), Ponto2d(-0.05f, 0.5f), Ponto3d(0.4f, 0, 0.4f));
+    contorno(Ponto3d(1, 1, 0), 0, 2);
 }
 
 void exercicio5()
