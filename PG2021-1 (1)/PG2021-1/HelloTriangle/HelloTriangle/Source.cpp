@@ -58,6 +58,24 @@ const GLchar* fragmentShaderSource = "#version 450\n"
 "color = inputColor;\n"
 "}\n\0";
 
+const GLchar* vertexShaderSourceNapolitano = "#version 450\n"
+"layout (location = 0) in vec3 position;\n"
+"layout (location = 1) in vec3 color;\n"
+"out vec4 inputColor;\n"
+"void main()\n"
+"{\n"
+"inputColor = vec4(color, 1.0);\n"
+"gl_Position = vec4(position.x, position.y, position.z, 1.0);\n"
+"}\0";
+
+const GLchar* fragmentShaderSourceNapolitano = "#version 450\n"
+"in vec4 inputColor;\n"
+"out vec4 color;\n"
+"void main()\n"
+"{\n"
+"color = inputColor;\n"
+"}\n\0";
+
 GLuint colorLoc, shaderID;
 
 const Ponto3d corDeFundo = Ponto3d(0.5f, 0.5f, 0.5f);
@@ -73,7 +91,12 @@ void exercicio5();
 void exercicio6();
 void exercicio7();
 int setupShader();
+int setupShaderNapolitano();
 int setupGeometry(Ponto2d vertice1, Ponto2d vertice2, Ponto2d vertice3);
+int setupGeometryNapolitano(Ponto2d vertice1, Ponto2d vertice2, Ponto2d vertice3,
+    Ponto3d corVertice1, Ponto3d corVertice2, Ponto3d corVertice3);
+int setupGeometryNapolitanoV2(Ponto2d vertice1, Ponto2d vertice2, Ponto2d vertice3,
+    Ponto3d corVertice1, Ponto3d corVertice2, Ponto3d corVertice3);
 
 /*
 Inicializador do programa.
@@ -145,6 +168,9 @@ int main(void)
             case '2':
                 exercicio2();
                 break;
+            case '3':
+                exercicio3();
+                break;
             case '4':
                 exercicio4();
                 break;
@@ -177,11 +203,57 @@ int main(void)
 // O código fonte do vertex e fragment shader está nos arrays vertexShaderSource e
 // fragmentShader source no iniçio deste arquivo
 // A função retorna o identificador do programa de shader
-int setupShader()
+int setupShader() {
+	// Vertex shader
+	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+	glCompileShader(vertexShader);
+
+	// Checando erros de compilação (exibição via log no terminal)
+	GLint success;
+	GLchar infoLog[512];
+	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+	}
+	// Fragment shader
+	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+	glCompileShader(fragmentShader);
+
+	// Checando erros de compilação (exibição via log no terminal)
+	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+		std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+	}
+
+	// Linkando os shaders e criando o identificador do programa de shader
+	GLuint shaderProgram = glCreateProgram();
+	glAttachShader(shaderProgram, vertexShader);
+	glAttachShader(shaderProgram, fragmentShader);
+	glLinkProgram(shaderProgram);
+
+	// Checando por erros de linkagem
+	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+	if (!success) {
+		glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+		std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+	}
+	glDeleteShader(vertexShader);
+	glDeleteShader(fragmentShader);
+
+	return shaderProgram;
+}
+
+int setupShaderNapolitano()
 {
     // Vertex shader
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+    glShaderSource(vertexShader, 1, &vertexShaderSourceNapolitano, NULL);
     glCompileShader(vertexShader);
     // Checando erros de compilação (exibição via log no terminal)
     GLint success;
@@ -194,7 +266,7 @@ int setupShader()
     }
     // Fragment shader
     GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSourceNapolitano, NULL);
     glCompileShader(fragmentShader);
     // Checando erros de compilação (exibição via log no terminal)
     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
@@ -272,6 +344,78 @@ int setupGeometry(Ponto2d vertice1, Ponto2d vertice2, Ponto2d vertice3)
     return VAO;
 }
 
+int setupGeometryNapolitano(Ponto2d vertice1, Ponto2d vertice2, Ponto2d vertice3, 
+    Ponto3d corVertice1, Ponto3d corVertice2, Ponto3d corVertice3)
+{
+    GLfloat vertices[] = {
+        vertice1.x, vertice1.y, 0.0, corVertice1.x, corVertice1.y, corVertice1.z,
+        vertice2.x, vertice2.y, 0.0, corVertice2.x, corVertice2.y, corVertice2.z,
+        vertice3.x, vertice3.y, 0.0, corVertice3.x, corVertice3.y, corVertice3.z
+    };
+
+    GLuint VBO, VAO;
+    //Geração do identificador do VAO (Vertex Array Object)
+    glGenVertexArrays(1, &VAO);
+    //Geração do identificador do VBO
+    glGenBuffers(1, &VBO);
+
+    // Vincula (bind) o VAO primeiro, e em seguida  conecta e seta o(s) buffer(s) de vértices
+    // e os ponteiros para os atributos 
+    glBindVertexArray(VAO);
+    //Faz a conexão (vincula) do buffer como um buffer de array
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    //Envia os dados do array de floats para o buffer da OpenGl
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), nullptr);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+    glEnableVertexAttribArray(1);
+
+    // Desvincula o VAO (é uma boa prática desvincular qualquer buffer ou array para evitar bugs medonhos)
+    glBindVertexArray(0);
+
+    return VAO;
+}
+
+int setupGeometryNapolitanoV2(Ponto2d vertice1, Ponto2d vertice2, Ponto2d vertice3,
+    Ponto3d corVertice1, Ponto3d corVertice2, Ponto3d corVertice3)
+{
+    GLfloat vertices[] = {
+        vertice1.x, vertice1.y, 0.0,
+        vertice2.x, vertice2.y, 0.0,
+        vertice3.x, vertice3.y, 0.0,
+    };
+
+    GLfloat cores[] = {
+        corVertice1.x, corVertice1.y, corVertice1.z,
+        corVertice2.x, corVertice2.y, corVertice2.z,
+        corVertice3.x, corVertice3.y, corVertice3.z
+    };
+
+    GLuint VBOvertices, VBOcores, VAO;
+
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+
+    glGenBuffers(1, &VBOvertices);
+    glBindBuffer(GL_ARRAY_BUFFER, VBOvertices);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
+    glEnableVertexAttribArray(0);
+
+    glGenBuffers(1, &VBOcores);
+    glBindBuffer(GL_ARRAY_BUFFER, VBOcores);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(cores), cores, GL_STATIC_DRAW);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
+    glEnableVertexAttribArray(1);
+
+    // Desvincula o VAO (é uma boa prática desvincular qualquer buffer ou array para evitar bugs medonhos)
+    glBindVertexArray(0);
+
+    return VAO;
+}
+
 /*
 Imprime um triângulo de acordo com os vértices.
 @param vertice1 Primeiro vértice.
@@ -291,6 +435,36 @@ void desenhaTriangulo(Ponto2d vertice1, Ponto2d vertice2, Ponto2d vertice3, Pont
 
     GLuint VAO = setupGeometry(vertice1, vertice2, vertice3);
     glUniform4f(colorLoc, cor.x, cor.y, cor.z, 1.0f);
+    glUseProgram(shaderID);
+    glBindVertexArray(VAO);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+}
+
+/*
+Imprime um triângulo de acordo com os vértices.
+@param vertice1 Primeiro vértice.
+@param vertice2 Segundo vértice.
+@param vertice3 Terceiro vértice.
+*/
+void desenhaTrianguloNapolitano(Ponto2d vertice1, Ponto2d vertice2, Ponto2d vertice3)
+{
+    GLuint VAO = setupGeometryNapolitano(vertice1, vertice2, vertice3, Ponto3d(1,0,0),
+        Ponto3d(0,1,0), Ponto3d(0,0,1));
+    glUseProgram(shaderID);
+    glBindVertexArray(VAO);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+}
+
+/*
+Imprime um triângulo de acordo com os vértices.
+@param vertice1 Primeiro vértice.
+@param vertice2 Segundo vértice.
+@param vertice3 Terceiro vértice.
+*/
+void desenhaTrianguloNapolitanoV2(Ponto2d vertice1, Ponto2d vertice2, Ponto2d vertice3)
+{
+    GLuint VAO = setupGeometryNapolitanoV2(vertice1, vertice2, vertice3, Ponto3d(1, 0, 0),
+        Ponto3d(0, 1, 0), Ponto3d(0, 0, 1));
     glUseProgram(shaderID);
     glBindVertexArray(VAO);
     glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -342,15 +516,20 @@ Imprime um círculo de acordo com um ponto inicial.
 */
 void desenhaCirculo(Ponto2d pontoInicial, Ponto3d cor, float fatorDeEscala)
 {
-    for (int i = 0; i < 360; i++)
+    for (int i = 0; i < 3600; i++)
     {
         float angle = i * RAD2DEG;
         float postAngle = (i + 1) * RAD2DEG;
 
-        desenhaTriangulo(Ponto2d(pontoInicial.x, pontoInicial.y),
+        desenhaTriangulo(
             Ponto2d(sin(angle) * fatorDeEscala + pontoInicial.x, cos(angle) * fatorDeEscala + pontoInicial.y),
             Ponto2d(sin(postAngle) * fatorDeEscala + pontoInicial.x, cos(postAngle) * fatorDeEscala + pontoInicial.y),
+            Ponto2d(pontoInicial.x, pontoInicial.y),
             Ponto3d(cor.x, cor.y, cor.z));
+
+        glUniform4f(colorLoc, 1, 1, 1, 1);
+        glDrawArrays(GL_LINE_LOOP, 0, 2);
+        glBindVertexArray(0);
     }
 }
 
@@ -369,9 +548,14 @@ void exercicio2()
         Ponto3d(0, 1, 0));
 }
 
-void exercico3()
+void exercicio3()
 {
+    // Compilando e buildando o programa de shader
+    shaderID = setupShaderNapolitano();
+    glUseProgram(shaderID);
 
+    desenhaTrianguloNapolitano(Ponto2d(-0.5, -0.5f), Ponto2d(-0.05f, -0.5f), Ponto2d(-0.05f, 0.5f));
+    desenhaTrianguloNapolitanoV2(Ponto2d(0.5, -0.5f), Ponto2d(0.05f, -0.5f), Ponto2d(0.05f, 0.5f));
 }
 
 void exercicio4()
