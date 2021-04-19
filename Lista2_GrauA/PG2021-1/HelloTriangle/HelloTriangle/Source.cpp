@@ -2,14 +2,9 @@
 
 #include <conio.h>
 #include <math.h>
-#include "Shaders.h"
+#include "GeometryHelper.h"
 
 GLuint colorLoc, shaderID;
-
-const Ponto3d corDeFundo = Ponto3d(0.25f, 0.25f, 0.25f);
-
-const float RAD2DEG = 180. / 3.14159265358979323846f;
-const float DEG2RAD = 3.14159265358979323846f / 180.;
 
 void exercicio1();
 void exercicio2();
@@ -37,7 +32,7 @@ int main(void)
         glfwInit();
 
         // Criação da janela GLFW
-        GLFWwindow* window = glfwCreateWindow(1920, 1080, "Ola Triangulo!", nullptr, nullptr);
+        GLFWwindow* window = glfwCreateWindow(1920, 1080, "Akeno-sama <3", nullptr, nullptr);
         glfwMakeContextCurrent(window);
 
         // GLAD: carrega todos os ponteiros d funções da OpenGL

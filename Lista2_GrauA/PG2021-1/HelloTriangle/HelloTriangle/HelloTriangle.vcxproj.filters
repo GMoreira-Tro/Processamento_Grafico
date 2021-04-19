@@ -27,12 +27,18 @@
     <ClCompile Include="Shaders.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GeometryHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Vetores.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Shaders.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GeometryHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
