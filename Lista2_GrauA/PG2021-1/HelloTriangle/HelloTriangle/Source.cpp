@@ -5,12 +5,17 @@
 #include "GeometryHelper.h"
 
 GLuint colorLoc, shaderID;
+int altura, largura;
+float razaoAspecto;
 
 void exercicio1();
 void exercicio2();
 void exercicio3();
 void exercicio4();
 void exercicio5();
+
+void reajustaRazaoAspecto();
+void projecaoOrtografica(GLdouble esquerda, GLdouble direita, GLdouble baixo, GLdouble alto, GLdouble zPerto, GLdouble zLonge);
 
 /*
 Inicializador do programa.
@@ -32,7 +37,7 @@ int main(void)
         glfwInit();
 
         // Criação da janela GLFW
-        GLFWwindow* window = glfwCreateWindow(1920, 1080, "Akeno-sama <3", nullptr, nullptr);
+        GLFWwindow* window = glfwCreateWindow(1920, 1080, "Akeno-sama <3", NULL, NULL);
         glfwMakeContextCurrent(window);
 
         // GLAD: carrega todos os ponteiros d funções da OpenGL
@@ -48,31 +53,24 @@ int main(void)
         cout << "Renderer: " << renderer << endl;
         cout << "OpenGL version supported " << version << endl;
 
-        // Definindo as dimensões da viewport com as mesmas dimensões da janela da aplicação
-        int width, height;
-        glfwGetFramebufferSize(window, &width, &height);
-        glViewport(0, 0, width, height);
-
-        // Compilando e buildando o programa de shader
-        shaderID = Shaders::setupShader();
-
-        // Enviando a cor desejada (vec4) para o fragment shader
-        // Utilizamos a variáveis do tipo uniform em GLSL para armazenar esse tipo de info
-        // que não está nos buffers
-        GLint colorLoc = glGetUniformLocation(shaderID, "inputColor");
-        assert(colorLoc > -1);
-        glUseProgram(shaderID);
+        glClearColor(corDeFundo.x, corDeFundo.y, corDeFundo.z, 1.0f);
 
         //Loop da aplicação da janela.
         while (!glfwWindowShouldClose(window))
         {
-
-            // Limpa o buffer de cor
-            glClearColor(corDeFundo.x, corDeFundo.y, corDeFundo.z, 1.0f); //cor de fundo
-            glClear(GL_COLOR_BUFFER_BIT);
+            glfwPollEvents();
+            if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+            {
+                glfwSetWindowShouldClose(window, GLFW_TRUE);
+            }
 
             /* Render here */
             glClear(GL_COLOR_BUFFER_BIT);
+
+            glfwGetFramebufferSize(window, &largura, &altura);
+            glViewport(0, 0, largura, altura);
+
+            reajustaRazaoAspecto();
 
             switch (exercicio)
             {
@@ -99,9 +97,6 @@ int main(void)
 
             /* Swap front and back buffers */
             glfwSwapBuffers(window);
-
-            /* Poll for and process events */
-            glfwPollEvents();
         }
 
         cout << "\n\n";
@@ -109,14 +104,46 @@ int main(void)
     }
 }
 
+void reajustaRazaoAspecto()
+{
+    razaoAspecto = (float)largura / altura;
+}
+
+void projecaoOrtografica(GLdouble esquerda, GLdouble direita, GLdouble baixo, GLdouble alto, GLdouble zPerto = 1, GLdouble zLonge = -1)
+{
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(esquerda * razaoAspecto, direita * razaoAspecto, baixo, alto, zPerto, zLonge);
+}
+
+void projecaoOrtograficaDesproporcional(GLdouble esquerda, GLdouble direita, GLdouble baixo, GLdouble alto, GLdouble zPerto = 1, GLdouble zLonge = -1)
+{
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(esquerda, direita, baixo, alto, zPerto, zLonge);
+}
+
 void exercicio1()
 {
+    projecaoOrtografica(-10, 10, -10, 10);
+    GeometryHelper::desenhaTriangulo(colorLoc, shaderID, Ponto2d(-3, -3), Ponto2d(3, -3), Ponto2d(0, 0),
+        Ponto3d(0.9f, 0, 0.3f));
 
 }
 
 void exercicio2()
 {
-
+    projecaoOrtograficaDesproporcional(-200, 200, -200, 200);
+    
+    glColor3f(0.75f, 0.25f, 0.05f);
+    glBegin(GL_QUADS);
+    {
+        glVertex2f(-50, -50);
+        glVertex2f(50, -50);
+        glVertex2f(50, 50);
+        glVertex2f(-50, 50);
+    }
+    glEnd();
 }
 
 void exercicio3()
