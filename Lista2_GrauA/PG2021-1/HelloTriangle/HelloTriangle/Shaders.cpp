@@ -1,10 +1,43 @@
-#include <Shaders.h>
+#include "Shaders.h"
 
-//Esta função está basntante hardcoded - objetivo é compilar e "buildar" um programa de
-// shader simples e único neste exemplo de código
+const GLchar* vertexShaderSource = "#version 450\n"
+"layout (location = 0) in vec3 position;\n"
+"void main()\n"
+"{\n"
+"gl_Position = vec4(position.x, position.y, position.z, 1.0);\n"
+"}\0";
+
+const GLchar* fragmentShaderSource = "#version 450\n"
+"uniform vec4 inputColor;\n"
+"out vec4 color;\n"
+"void main()\n"
+"{\n"
+"color = inputColor;\n"
+"}\n\0";
+
+const GLchar* vertexShaderSourceNapolitano = "#version 450\n"
+"layout (location = 0) in vec3 position;\n"
+"layout (location = 1) in vec3 color;\n"
+"out vec4 inputColor;\n"
+"void main()\n"
+"{\n"
+"inputColor = vec4(color, 1.0);\n"
+"gl_Position = vec4(position.x, position.y, position.z, 1.0);\n"
+"}\0";
+
+const GLchar* fragmentShaderSourceNapolitano = "#version 450\n"
+"in vec4 inputColor;\n"
+"out vec4 color;\n"
+"void main()\n"
+"{\n"
+"color = inputColor;\n"
+"}\n\0";
+
+// Compilar e "buildar" um programa de
+// shader simples e único neste exemplo de código.
 // O código fonte do vertex e fragment shader está nos arrays vertexShaderSource e
-// fragmentShader source no iniçio deste arquivo
-// A função retorna o identificador do programa de shader
+// fragmentShader source no iniçio deste arquivo.
+// A função retorna o identificador do programa de shader.
 int Shaders::setupShader()
 {
     // Vertex shader
@@ -97,11 +130,11 @@ int Shaders::setupShaderNapolitano()
     return shaderProgram;
 }
 
-// Esta função está bastante harcoded - objetivo é criar os buffers que armazenam a 
-// geometria de um triângulo
+// Criar os buffers que armazenam a 
+// geometria de um triângulo.
 // Apenas atributo coordenada nos vértices
-// 1 VBO com as coordenadas, VAO com apenas 1 ponteiro para atributo
-// A função retorna o identificador do VAO
+// 1 VBO com as coordenadas, VAO com apenas 1 ponteiro para atributo.
+// A função retorna o identificador do VAO.
 int Shaders::setupGeometry(Ponto2d vertice1, Ponto2d vertice2, Ponto2d vertice3)
 {
     // Aqui setamos as coordenadas x, y e z do triângulo e as armazenamos de forma
