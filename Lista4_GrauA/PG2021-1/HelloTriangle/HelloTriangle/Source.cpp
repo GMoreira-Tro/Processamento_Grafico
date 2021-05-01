@@ -7,6 +7,7 @@
 #include "Texture.h"
 
 GLuint colorLoc, shaderID, texturesID[5];
+Texture* textures[5];
 GLFWwindow* window;
 int altura, largura;
 float razaoAspecto;
@@ -48,13 +49,17 @@ int main(void)
 
         glClearColor(corDeFundo.x, corDeFundo.y, corDeFundo.z, 1.0f);
 
-        glEnable(GL_DEPTH_TEST);
+        //glEnable(GL_DEPTH_TEST);
         glEnable(GL_TEXTURE_2D);
-        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+        //glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
         glGenTextures(3, texturesID);
-        Texture* dxd = new Texture("Texturas/snk.png", texturesID[0]);
-        //carregaTextura(texturesID[1], "images/painted_brick.png");
-        //carregaTextura(texturesID[2], "images/wood.png");
+        textures[0] = new Texture("Texturas/brick.png", texturesID[0]);
+        textures[1] = new Texture("Texturas/Akeno-samaS2.jpg", texturesID[1]);
+        textures[2] = new Texture("Texturas/Tanjiro-kun.jpg", texturesID[2]);
+
+        cout << textures[0]->rendererID;
+        cout << textures[1]->rendererID;
+        cout << textures[2]->rendererID;
 
         MovementHelper::eixoHorizontal = MovementHelper::eixoVertical = 0;
         //Loop da aplicação da janela.
@@ -103,15 +108,28 @@ void reajustaRazaoAspecto()
 
 void exercicio1()
 {
-    //GeometryHelper::projecaoOrtografica(razaoAspecto, -10, 10, -10, 10);
+    GeometryHelper::projecaoOrtografica(razaoAspecto, -10, 10, -10, 10);
+
+    GeometryHelper::desenhaQuadrilateroTexturizado(textures[1]->rendererID, 
+        Ponto2d(-10 * razaoAspecto, -10),
+        Ponto2d(10 * razaoAspecto, -10), 
+        Ponto2d(10 * razaoAspecto, 10), 
+        Ponto2d(-10 * razaoAspecto, 10), 
+        Ponto3d(1, 1, 1));
+
+    GeometryHelper::desenhaQuadrilateroTexturizado(textures[2]->rendererID,
+        Ponto2d(-10 * razaoAspecto, -10),
+        Ponto2d(-5 * razaoAspecto, -10),
+        Ponto2d(-5 * razaoAspecto, -5),
+        Ponto2d(-10 * razaoAspecto, -5),
+        Ponto3d(0.8f, 0.8f, 0.8f));
 
     glPushMatrix(); //Empilha a matriz de transformação atual
     MovementHelper::movimentacao_WASD(window, 0.00005f * largura, 10 * razaoAspecto -2.5f, 7.5f, 
         -10 * razaoAspecto + 2.5f, -7.5f);
-    //GeometryHelper::desenhaTrianguloTexturizado(texturesID[0],
-    //    Ponto2d(-2.5, -2.5), Ponto2d(2.5, -2.5), Ponto2d(0, 2.5),
-    //    Ponto3d(0.3f, 0, 0.9f));
-    GeometryHelper::desenhaQuadrilateroTexturizado(texturesID[0], Ponto2d(-1, -1),
-        Ponto2d(1, -1), Ponto2d(1, 1), Ponto2d(-1, 1), Ponto3d(1, 1, 1));
+    GeometryHelper::desenhaTrianguloTexturizado(texturesID[0],
+        Ponto2d(-2.5, -2.5), Ponto2d(2.5, -2.5), Ponto2d(0, 2.5),
+        Ponto3d(0.3f, 0, 0.9f));
     glPopMatrix(); //Desempilha a matriz de transformação atual
+
 }

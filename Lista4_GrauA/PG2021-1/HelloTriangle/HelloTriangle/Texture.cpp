@@ -47,10 +47,10 @@ void Texture::UnBind()
 
 int Texture::GetWidth()
 {
-	return 0;
+	return largura;
 }
 
 int Texture::GetHeight()
 {
-	return 0;
+	return altura;
 }

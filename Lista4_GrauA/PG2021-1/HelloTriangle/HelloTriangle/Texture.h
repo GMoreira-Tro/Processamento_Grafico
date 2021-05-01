@@ -7,7 +7,6 @@
 class Texture
 {
 private:
-	unsigned int rendererID;
 	std::string filePath;
 	unsigned char* localBuffer;
 	int largura;
@@ -17,6 +16,8 @@ private:
 	void FourApocalipseKnights();
 
 public:
+	unsigned int rendererID;
+
 	Texture(std::string path, unsigned int rendererID);
 	~Texture();
 	void Bind(unsigned int slot);
