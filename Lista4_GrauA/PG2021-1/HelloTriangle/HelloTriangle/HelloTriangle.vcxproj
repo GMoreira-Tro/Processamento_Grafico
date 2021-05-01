@@ -120,12 +120,16 @@
     <ClCompile Include="MovementHelper.cpp" />
     <ClCompile Include="Shaders.cpp" />
     <ClCompile Include="Source.cpp" />
+    <ClCompile Include="stb_image.cpp" />
+    <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Vetores.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GeometryHelper.h" />
     <ClInclude Include="MovementHelper.h" />
     <ClInclude Include="Shaders.h" />
+    <ClInclude Include="stb_image.h" />
+    <ClInclude Include="Texture.h" />
     <ClInclude Include="Vetores.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

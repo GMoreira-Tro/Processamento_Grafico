@@ -36,6 +36,22 @@ void GeometryHelper::desenhaTriangulo(Ponto2d vertice1, Ponto2d vertice2, Ponto2
     glEnd();
 }
 
+void GeometryHelper::desenhaTrianguloTexturizado(GLuint textureID, Ponto2d vertice1, Ponto2d vertice2, Ponto2d vertice3, Ponto3d cor)
+{
+    glColor3f(cor.x, cor.y, cor.z);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+    glBegin(GL_TRIANGLES);
+    glTexCoord2f(0.0, 0.0); 
+    glVertex2f(vertice1.x, vertice1.y);
+
+    glTexCoord2f(1.0, 0.0); 
+    glVertex2f(vertice2.x, vertice2.y);
+
+    glTexCoord2f(0.5, 1.0); 
+    glVertex2f(vertice3.x, vertice3.y);
+    glEnd();
+}
+
 /*
 Imprime um triângulo de acordo com os vértices.
 @param shaderID Identificador do programa de shader.
@@ -177,6 +193,27 @@ void GeometryHelper::desenhaQuadrilatero(Ponto2d vertice1, Ponto2d vertice2, Pon
         glVertex2f(vertice1.x, vertice1.y);
         glVertex2f(vertice2.x, vertice2.y);
         glVertex2f(vertice3.x, vertice3.y);
+        glVertex2f(vertice4.x, vertice4.y);
+    }
+    glEnd();
+}
+
+void GeometryHelper::desenhaQuadrilateroTexturizado(GLuint textureID, Ponto2d vertice1, Ponto2d vertice2, Ponto2d vertice3, Ponto2d vertice4, Ponto3d cor)
+{
+    glColor3f(cor.x, cor.y, cor.z);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+    glBegin(GL_QUADS);
+    {
+        glTexCoord2f(0.0, 0.0); 
+        glVertex2f(vertice1.x, vertice1.y);
+
+        glTexCoord2f(1.0, 0.0); 
+        glVertex2f(vertice2.x, vertice2.y);
+
+        glTexCoord2f(1.0, 1.0); 
+        glVertex2f(vertice3.x, vertice3.y);
+
+        glTexCoord2f(0.0, 1.0); 
         glVertex2f(vertice4.x, vertice4.y);
     }
     glEnd();
