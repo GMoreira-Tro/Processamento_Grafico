@@ -1,38 +1,69 @@
 #pragma once
 
-#include <conio.h>
 #include <math.h>
 #include "MovementHelper.h"
 #include "Texture.h"
 #include <thread>
 #include <windows.h>
+#include <GL/glut.h>
 
-#define milissegundosAtualizacaoSpriteSheet 100
+#define MilissegundosAtualizacaoSpriteSheet 100
+#define MilissengundosAtualizacaoGameLevel 10000
 
 GLuint colorLoc, shaderID;
+
+#pragma region Texturas
 
 Texture* enemies[5];
 Texture* background;
 Texture* characterSpriteSheet[10];
 unsigned int spriteSheetIndex = 0;
 
+#pragma endregion
+
+
 GLFWwindow* window;
 
 int altura, largura;
 float razaoAspecto;
 
+#pragma region GameInfo
+
+//Fator de velocidade da cena.
+unsigned int gameLevel = 1;
+//Pontuação.
+unsigned short gamePoints = 0;
+//Deu fim de jogo?
+bool fimDeJogo = false;
+
+#pragma endregion
+
+#pragma region Methods
+
 void carregaTexturas();
 void gameUpdate();
+void gameOverUpdate();
 void reajustaRazaoAspecto();
 void atualizaSpriteSheetIndex();
+void atualizaGameLevel();
+void gameOver();
+void desenhaTexto(const char* texto, int x, int y);
+
+#pragma endregion
 
 /*
 Inicializador do programa.
 */
-int main(void)
+int main(int argc, char* argv[])
 {
+    //Musiquinha
+     //PlaySound("Sons/danganronpa.wav", NULL, SND_ASYNC | SND_LOOP);
+
     // Inicialização da GLFW
     glfwInit();
+
+    //Inicialização da GLUT
+    glutInit(&argc, argv);
 
     // Criação da janela GLFW
     window = glfwCreateWindow(1920, 1080, "Emo runner", NULL, NULL);
@@ -46,6 +77,7 @@ int main(void)
 
     carregaTexturas();
     thread threadAtualizaSpriteSheet(atualizaSpriteSheetIndex);
+    thread threadAtualizaGameLevel(atualizaGameLevel);
 
     MovementHelper::eixoHorizontal = MovementHelper::eixoVertical = 0;
     //Loop da aplicação da janela.
@@ -65,7 +97,14 @@ int main(void)
 
         reajustaRazaoAspecto();
 
-        gameUpdate();
+        if (fimDeJogo)
+        {
+            gameOverUpdate();
+        }
+        else
+        {
+            gameUpdate();
+        }
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
@@ -75,6 +114,7 @@ int main(void)
     glDisable(GL_TEXTURE_2D);
     glfwTerminate();
     threadAtualizaSpriteSheet.join();
+    threadAtualizaGameLevel.join();
 }
 
 /*
@@ -82,24 +122,29 @@ Update principal do game.
 */
 void gameUpdate()
 {
-    GeometryHelper::projecaoOrtografica(razaoAspecto, -10, 10, -10, 10);
+    //GeometryHelper::projecaoOrtografica(razaoAspecto, -10, 10, -10, 10);
 
-    GeometryHelper::desenhaQuadrilateroTexturizado(background->rendererID, 
-        Ponto2d(-10 * razaoAspecto, -10),
-        Ponto2d(10 * razaoAspecto, -10), 
-        Ponto2d(10 * razaoAspecto, 10), 
-        Ponto2d(-10 * razaoAspecto, 10), 
-        Ponto3d(1, 1, 1));
+    //GeometryHelper::desenhaQuadrilateroTexturizado(background->rendererID, 
+    //    Ponto2d(-10 * razaoAspecto, -10),
+    //    Ponto2d(10 * razaoAspecto, -10), 
+    //    Ponto2d(10 * razaoAspecto, 10), 
+    //    Ponto2d(-10 * razaoAspecto, 10), 
+    //    Ponto3d(1, 1, 1));
 
-    glPushMatrix(); //Empilha a matriz de transformação atual
-    MovementHelper::movimentacao_Pulo(window, 0.00005f * altura, 5);
-    GeometryHelper::desenhaQuadrilateroTexturizado(characterSpriteSheet[spriteSheetIndex]->rendererID,
-        Ponto2d(-12, -8),
-        Ponto2d(-9, -8),
-        Ponto2d(-9, -5),
-        Ponto2d(-12, -5),
-        Ponto3d(1,1,1));
-    glPopMatrix(); //Desempilha a matriz de transformação atual
+    ////Desenha o personagem emo
+    //glPushMatrix(); //Empilha a matriz de transformação atual
+    //MovementHelper::movimentacao_Pulo(window, 0.00005f * altura, 5);
+    //GeometryHelper::desenhaQuadrilateroTexturizado(characterSpriteSheet[spriteSheetIndex]->rendererID,
+    //    Ponto2d(-12, -8),
+    //    Ponto2d(-9, -8),
+    //    Ponto2d(-9, -5),
+    //    Ponto2d(-12, -5),
+    //    Ponto3d(1,1,1));
+    //glPopMatrix(); //Desempilha a matriz de transformação atual
+
+    string pontosString = "124124";
+    glColor3f(0, 1, 0);
+    desenhaTexto(pontosString.data(), -150, 150);
 }
 
 /*
@@ -151,7 +196,54 @@ void atualizaSpriteSheetIndex()
 {
     while(true)
     {
-        Sleep(milissegundosAtualizacaoSpriteSheet);
+        Sleep(MilissegundosAtualizacaoSpriteSheet);
         spriteSheetIndex = (spriteSheetIndex + 1) % 10;
     }
+}
+
+/*
+Função da thread que atualiza o Game Level.
+*/
+void atualizaGameLevel()
+{
+    while (gameLevel < 999)
+    {
+        Sleep(MilissengundosAtualizacaoGameLevel);
+        gameLevel++;
+    }
+}
+
+/*
+Função pra chamar logo ao dar Game Over.
+*/
+void gameOver()
+{
+    PlaySound("Sons/gameOver.wav", NULL, SND_ASYNC);
+}
+
+/*
+Update da tela de Game Over.
+*/
+void gameOverUpdate()
+{
+
+}
+
+/*
+Função para desenhar um texto na tela do contexto OpenGL.
+@param texto Texto a ser impresso.
+@param x Posição horizontal do texto.
+@param y Posição vertical do texto.
+*/
+void desenhaTexto(const char* texto, int x, int y)
+{
+    glPushMatrix();
+    // Posição no universo onde o texto será colocado          
+    glRasterPos2f(x, y);
+    // Exibe caractere a caractere
+    while (*texto)
+    {
+        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_10, *texto++);
+    }
+    glPopMatrix();
 }
