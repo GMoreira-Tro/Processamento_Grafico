@@ -16,20 +16,29 @@ GLuint colorLoc, shaderID;
 
 #pragma region Texturas
 
+//Textura dos inimigos.
 Texture* enemiesTextures[5];
+//Textura dos números de 0 a 9.
 Texture* numeros[10];
+//Textura do background da tela principal.
 Texture* background;
+//Textura do background de fim de jogo.
 Texture* backgroundGameOver;
+//Textura do texto que indica como jogar novamente.
 Texture* playAgain;
+//Vetor de texturas da Sprite Sheet do emo.
 Texture* characterSpriteSheet[10];
+//Índice atual da Sprite Sheet do emo.
 unsigned int spriteSheetIndex = 0;
 
 #pragma endregion
 
-
+//Janela do contexto OpenGL
 GLFWwindow* window;
 
+//Altura e largura da janela.
 int altura, largura;
+//Razão largura/altura da janela.
 float razaoAspecto;
 
 #pragma region GameInfo
@@ -59,6 +68,7 @@ void validaColisao();
 
 #pragma endregion
 
+//Classe contendo informações do inimigo.
 class Enemy
 {
 public:
@@ -71,7 +81,9 @@ public:
         this->texturaId = texturaId;
     }
 };
+//Vetor contendo os inimigos - queria uma lista, mas não sei fazer.
 Enemy* vetorInimigos[3];
+//Quantidade de inimigos ativos na tela.
 unsigned short quantInimigos = 0;
 
 /*
@@ -241,11 +253,9 @@ Método para carregar todas as texturas usadas no game.
 */
 void carregaTexturas()
 {
-    //glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    //glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
     //Carrega inimigos
     for (int i = 0; i < 5; i++)
