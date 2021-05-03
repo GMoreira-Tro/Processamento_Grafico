@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdlib.h>
+#include <time.h>
 #include <math.h>
 #include "MovementHelper.h"
 #include "Texture.h"
@@ -14,8 +16,11 @@ GLuint colorLoc, shaderID;
 
 #pragma region Texturas
 
-Texture* enemies[5];
+Texture* enemiesTextures[5];
+Texture* numeros[10];
 Texture* background;
+Texture* backgroundGameOver;
+Texture* playAgain;
 Texture* characterSpriteSheet[10];
 unsigned int spriteSheetIndex = 0;
 
@@ -47,9 +52,27 @@ void reajustaRazaoAspecto();
 void atualizaSpriteSheetIndex();
 void atualizaGameLevel();
 void gameOver();
-void desenhaTexto(const char* texto, int x, int y);
+void desenhaPontuacao();
+void GerenciadorInimigos();
+void validaPassagemInimigo();
+void validaColisao();
 
 #pragma endregion
+
+class Enemy
+{
+public:
+    float deslocamentoHorizontal;
+    int texturaId;
+
+    Enemy(int texturaId)
+    {
+        this->deslocamentoHorizontal = 0;
+        this->texturaId = texturaId;
+    }
+};
+Enemy* vetorInimigos[3];
+unsigned short quantInimigos = 0;
 
 /*
 Inicializador do programa.
@@ -57,7 +80,7 @@ Inicializador do programa.
 int main(int argc, char* argv[])
 {
     //Musiquinha
-     //PlaySound("Sons/danganronpa.wav", NULL, SND_ASYNC | SND_LOOP);
+    PlaySound("Sons/danganronpa.wav", NULL, SND_ASYNC | SND_LOOP);
 
     // Inicialização da GLFW
     glfwInit();
@@ -78,6 +101,7 @@ int main(int argc, char* argv[])
     carregaTexturas();
     thread threadAtualizaSpriteSheet(atualizaSpriteSheetIndex);
     thread threadAtualizaGameLevel(atualizaGameLevel);
+    thread threadGerenciaInimigos(GerenciadorInimigos);
 
     MovementHelper::eixoHorizontal = MovementHelper::eixoVertical = 0;
     //Loop da aplicação da janela.
@@ -115,6 +139,7 @@ int main(int argc, char* argv[])
     glfwTerminate();
     threadAtualizaSpriteSheet.join();
     threadAtualizaGameLevel.join();
+    threadGerenciaInimigos.join();
 }
 
 /*
@@ -122,29 +147,85 @@ Update principal do game.
 */
 void gameUpdate()
 {
-    //GeometryHelper::projecaoOrtografica(razaoAspecto, -10, 10, -10, 10);
+    GeometryHelper::projecaoOrtografica(razaoAspecto, -10, 10, -10, 10);
 
-    //GeometryHelper::desenhaQuadrilateroTexturizado(background->rendererID, 
-    //    Ponto2d(-10 * razaoAspecto, -10),
-    //    Ponto2d(10 * razaoAspecto, -10), 
-    //    Ponto2d(10 * razaoAspecto, 10), 
-    //    Ponto2d(-10 * razaoAspecto, 10), 
-    //    Ponto3d(1, 1, 1));
+    GeometryHelper::desenhaQuadrilateroTexturizado(background->rendererID,
+        Ponto2d(-10 * razaoAspecto, -10),
+        Ponto2d(10 * razaoAspecto, -10),
+        Ponto2d(10 * razaoAspecto, 10),
+        Ponto2d(-10 * razaoAspecto, 10),
+        Ponto3d(1, 1, 1));
 
-    ////Desenha o personagem emo
-    //glPushMatrix(); //Empilha a matriz de transformação atual
-    //MovementHelper::movimentacao_Pulo(window, 0.00005f * altura, 5);
-    //GeometryHelper::desenhaQuadrilateroTexturizado(characterSpriteSheet[spriteSheetIndex]->rendererID,
-    //    Ponto2d(-12, -8),
-    //    Ponto2d(-9, -8),
-    //    Ponto2d(-9, -5),
-    //    Ponto2d(-12, -5),
-    //    Ponto3d(1,1,1));
-    //glPopMatrix(); //Desempilha a matriz de transformação atual
+    //Desenha o personagem emo
+    glPushMatrix(); //Empilha a matriz de transformação atual
+    MovementHelper::movimentacao_Pulo(window, (float)gameLevel/100 * (float)largura / 1000, 5);
+    GeometryHelper::desenhaQuadrilateroTexturizado(characterSpriteSheet[spriteSheetIndex]->rendererID,
+        Ponto2d(-12, -8),
+        Ponto2d(-9, -8),
+        Ponto2d(-9, -5),
+        Ponto2d(-12, -5),
+        Ponto3d(1, 1, 1));
+    glPopMatrix(); //Desempilha a matriz de transformação atual
 
-    string pontosString = "124124";
-    glColor3f(0, 1, 0);
-    desenhaTexto(pontosString.data(), -150, 150);
+    desenhaPontuacao();
+
+    for (int i = 0; i < quantInimigos; i++)
+    {
+        glPushMatrix(); //Empilha a matriz de transformação atual
+        GeometryHelper::desenhaQuadrilateroTexturizado(vetorInimigos[i]->texturaId,
+            Ponto2d(12 - vetorInimigos[i]->deslocamentoHorizontal, -8),
+            Ponto2d(11 - vetorInimigos[i]->deslocamentoHorizontal, -8),
+            Ponto2d(11 - vetorInimigos[i]->deslocamentoHorizontal, -5),
+            Ponto2d(12 - vetorInimigos[i]->deslocamentoHorizontal, -5),
+            Ponto3d(1, 1, 1));
+        glPopMatrix(); //Desempilha a matriz de transformação atual
+
+        vetorInimigos[i]->deslocamentoHorizontal += (float)gameLevel / 100 * (float)largura/1000;
+    }
+
+    if (quantInimigos > 0)
+    {
+        validaColisao();
+        validaPassagemInimigo();
+    }
+}
+
+/*
+Validar uma colisao com o inimigo.
+*/
+void validaColisao()
+{
+    if (vetorInimigos[0]->deslocamentoHorizontal > 22 && 
+        vetorInimigos[0]->deslocamentoHorizontal < 24)
+    {
+        if (MovementHelper::eixoVertical < 2)
+        {
+            gameOver();
+        }
+    }
+}
+
+/*
+Validar um inimigo que foi embora.
+*/
+void validaPassagemInimigo()
+{
+    if (vetorInimigos[0]->deslocamentoHorizontal > 25)
+    {
+        if (gamePoints < 999)
+        {
+            gamePoints++;
+        }
+        quantInimigos--;
+        if (quantInimigos > 0)
+        {
+            vetorInimigos[0] = vetorInimigos[1];
+            if (quantInimigos > 1)
+            {
+                vetorInimigos[1] = vetorInimigos[2];
+            }
+        }
+    }
 }
 
 /*
@@ -171,7 +252,7 @@ void carregaTexturas()
     {
         GLuint rendererID;
         glGenTextures(1, &rendererID);
-        enemies[i] = new Texture("Texturas/Enemies/enemy" + to_string(i) + ".png", rendererID);
+        enemiesTextures[i] = new Texture("Texturas/Enemies/enemy" + to_string(i) + ".png", rendererID);
     }
 
     //Carrega o background
@@ -179,12 +260,27 @@ void carregaTexturas()
     glGenTextures(1, &rendererID);
     background = new Texture("Texturas/background.jpg", rendererID);
 
+    glGenTextures(1, &rendererID);
+    backgroundGameOver = new Texture("Texturas/backgroundGameOver.jpg", rendererID);
+
+    glGenTextures(1, &rendererID);
+    playAgain = new Texture("Texturas/PlayAgain.png", rendererID);
+
     //Carrega a Sprite Sheet do nosso herói emo
     for (int i = 0; i < 10; i++)
     {
         GLuint rendererID;
         glGenTextures(1, &rendererID);
         characterSpriteSheet[i] = new Texture("Texturas/EmoSpriteSheet/tile00" + to_string(i) +
+            ".png", rendererID);
+    }
+
+    //Carrega a textura dos números
+    for (int i = 0; i < 10; i++)
+    {
+        GLuint rendererID;
+        glGenTextures(1, &rendererID);
+        numeros[i] = new Texture("Texturas/Numeros/" + to_string(i) +
             ".png", rendererID);
     }
 }
@@ -206,10 +302,34 @@ Função da thread que atualiza o Game Level.
 */
 void atualizaGameLevel()
 {
-    while (gameLevel < 999)
+    while (true)
     {
         Sleep(MilissengundosAtualizacaoGameLevel);
+        if (fimDeJogo || gameLevel == 999)
+        {
+            continue;
+        }
         gameLevel++;
+    }
+}
+
+/*
+Função da thread que gerencia inimigos.
+*/
+void GerenciadorInimigos()
+{
+    while (true)
+    {
+        if (fimDeJogo || quantInimigos == 3)
+        {
+            continue;
+        }
+
+        srand(time(NULL));
+
+        vetorInimigos[quantInimigos] = new Enemy(enemiesTextures[rand() % 5]->rendererID);
+        quantInimigos++;
+        Sleep(200 + 2000 / gameLevel);
     }
 }
 
@@ -219,6 +339,7 @@ Função pra chamar logo ao dar Game Over.
 void gameOver()
 {
     PlaySound("Sons/gameOver.wav", NULL, SND_ASYNC);
+    fimDeJogo = true;
 }
 
 /*
@@ -226,24 +347,61 @@ Update da tela de Game Over.
 */
 void gameOverUpdate()
 {
+    GeometryHelper::projecaoOrtografica(razaoAspecto, -10, 10, -10, 10);
 
+    GeometryHelper::desenhaQuadrilateroTexturizado(backgroundGameOver->rendererID,
+        Ponto2d(-10 * razaoAspecto, -10),
+        Ponto2d(10 * razaoAspecto, -10),
+        Ponto2d(10 * razaoAspecto, 10),
+        Ponto2d(-10 * razaoAspecto, 10),
+        Ponto3d(1, 1, 1));
+
+    GeometryHelper::desenhaQuadrilateroTexturizado(playAgain->rendererID,
+        Ponto2d(-2 * razaoAspecto, -5),
+        Ponto2d(2 * razaoAspecto, -5),
+        Ponto2d(2 * razaoAspecto, -4),
+        Ponto2d(-2 * razaoAspecto, -4),
+        Ponto3d(1, 1, 1));
+
+    if (glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS)
+    {
+        fimDeJogo = false;
+        PlaySound("Sons/danganronpa.wav", NULL, SND_ASYNC | SND_LOOP);
+        gameLevel = 1;
+        gamePoints = 0;
+        quantInimigos = 0;
+    }
 }
 
 /*
-Função para desenhar um texto na tela do contexto OpenGL.
-@param texto Texto a ser impresso.
-@param x Posição horizontal do texto.
-@param y Posição vertical do texto.
+Função para desenhar a pontuação.
 */
-void desenhaTexto(const char* texto, int x, int y)
+void desenhaPontuacao()
 {
-    glPushMatrix();
-    // Posição no universo onde o texto será colocado          
-    glRasterPos2f(x, y);
-    // Exibe caractere a caractere
-    while (*texto)
-    {
-        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_10, *texto++);
-    }
-    glPopMatrix();
+    int pontuacaoCaracteres = gamePoints;
+
+    GeometryHelper::desenhaQuadrilateroTexturizado(numeros[pontuacaoCaracteres%10]->rendererID,
+        Ponto2d(-12, 4),
+        Ponto2d(-9, 4),
+        Ponto2d(-9, 6),
+        Ponto2d(-12, 6),
+        Ponto3d(1, 1, 1));
+
+    pontuacaoCaracteres /= 10;
+
+    GeometryHelper::desenhaQuadrilateroTexturizado(numeros[pontuacaoCaracteres % 10]->rendererID,
+        Ponto2d(-13.5, 4),
+        Ponto2d(-10.5, 4),
+        Ponto2d(-10.5, 6),
+        Ponto2d(-13.5, 6),
+        Ponto3d(1, 1, 1));
+
+    pontuacaoCaracteres /= 10;
+
+    GeometryHelper::desenhaQuadrilateroTexturizado(numeros[pontuacaoCaracteres % 10]->rendererID,
+        Ponto2d(-15, 4),
+        Ponto2d(-12, 4),
+        Ponto2d(-12, 6),
+        Ponto2d(-15, 6),
+        Ponto3d(1, 1, 1));
 }
