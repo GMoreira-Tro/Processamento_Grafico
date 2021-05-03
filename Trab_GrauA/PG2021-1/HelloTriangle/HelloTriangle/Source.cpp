@@ -49,6 +49,8 @@ unsigned int gameLevel = 1;
 unsigned short gamePoints = 0;
 //Deu fim de jogo?
 bool fimDeJogo = false;
+Ponto3d corBackground = Ponto3d(1, 1, 1);
+bool escurecendo = true;
 
 #pragma endregion
 
@@ -74,11 +76,13 @@ class Enemy
 public:
     float deslocamentoHorizontal;
     int texturaId;
+    bool ehVoador;
 
-    Enemy(int texturaId)
+    Enemy(int texturaId, bool ehVoador)
     {
         this->deslocamentoHorizontal = 0;
         this->texturaId = texturaId;
+        this->ehVoador = ehVoador;
     }
 };
 //Vetor contendo os inimigos - queria uma lista, mas não sei fazer.
@@ -91,9 +95,6 @@ Inicializador do programa.
 */
 int main(int argc, char* argv[])
 {
-    //Musiquinha
-    PlaySound("Sons/danganronpa.wav", NULL, SND_ASYNC | SND_LOOP);
-
     // Inicialização da GLFW
     glfwInit();
 
@@ -116,6 +117,10 @@ int main(int argc, char* argv[])
     thread threadGerenciaInimigos(GerenciadorInimigos);
 
     MovementHelper::eixoHorizontal = MovementHelper::eixoVertical = 0;
+
+    //Musiquinha
+    PlaySound("Sons/danganronpa.wav", NULL, SND_ASYNC | SND_LOOP);
+
     //Loop da aplicação da janela.
     while (!glfwWindowShouldClose(window))
     {
@@ -166,7 +171,7 @@ void gameUpdate()
         Ponto2d(10 * razaoAspecto, -10),
         Ponto2d(10 * razaoAspecto, 10),
         Ponto2d(-10 * razaoAspecto, 10),
-        Ponto3d(1, 1, 1));
+        corBackground);
 
     //Desenha o personagem emo
     glPushMatrix(); //Empilha a matriz de transformação atual
@@ -184,12 +189,24 @@ void gameUpdate()
     for (int i = 0; i < quantInimigos; i++)
     {
         glPushMatrix(); //Empilha a matriz de transformação atual
+        if (vetorInimigos[i]->ehVoador)
+        {
+            GeometryHelper::desenhaQuadrilateroTexturizado(vetorInimigos[i]->texturaId,
+                Ponto2d(12 - vetorInimigos[i]->deslocamentoHorizontal, -5),
+                Ponto2d(11 - vetorInimigos[i]->deslocamentoHorizontal, -5),
+                Ponto2d(11 - vetorInimigos[i]->deslocamentoHorizontal, -2),
+                Ponto2d(12 - vetorInimigos[i]->deslocamentoHorizontal, -2),
+                Ponto3d(1, 1, 1));
+        }
+        else
+        {
         GeometryHelper::desenhaQuadrilateroTexturizado(vetorInimigos[i]->texturaId,
             Ponto2d(12 - vetorInimigos[i]->deslocamentoHorizontal, -8),
             Ponto2d(11 - vetorInimigos[i]->deslocamentoHorizontal, -8),
             Ponto2d(11 - vetorInimigos[i]->deslocamentoHorizontal, -5),
             Ponto2d(12 - vetorInimigos[i]->deslocamentoHorizontal, -5),
             Ponto3d(1, 1, 1));
+        }
         glPopMatrix(); //Desempilha a matriz de transformação atual
 
         vetorInimigos[i]->deslocamentoHorizontal += (float)gameLevel / 100 * (float)largura/1000;
@@ -210,7 +227,11 @@ void validaColisao()
     if (vetorInimigos[0]->deslocamentoHorizontal > 22 && 
         vetorInimigos[0]->deslocamentoHorizontal < 24)
     {
-        if (MovementHelper::eixoVertical < 2)
+        if (MovementHelper::eixoVertical < 2 && !vetorInimigos[0]->ehVoador)
+        {
+            gameOver();
+        }
+        else if (MovementHelper::eixoVertical >= 2 && vetorInimigos[0]->ehVoador)
         {
             gameOver();
         }
@@ -320,6 +341,23 @@ void atualizaGameLevel()
             continue;
         }
         gameLevel++;
+
+        if (escurecendo)
+        {
+            corBackground.x = corBackground.y = corBackground.z -= 0.1f;
+            if (corBackground.x < 0.6f)
+            {
+                escurecendo = false;
+            }
+        }
+        else
+        {
+            corBackground.x = corBackground.y = corBackground.z += 0.1f;
+            if (corBackground.x > 0.9f)
+            {
+                escurecendo = true;
+            }
+        }
     }
 }
 
@@ -337,7 +375,8 @@ void GerenciadorInimigos()
 
         srand(time(NULL));
 
-        vetorInimigos[quantInimigos] = new Enemy(enemiesTextures[rand() % 5]->rendererID);
+        vetorInimigos[quantInimigos] = new Enemy(enemiesTextures[rand() % 5]->rendererID,
+            rand()%2);
         quantInimigos++;
         Sleep(200 + 2000 / gameLevel);
     }
@@ -380,6 +419,8 @@ void gameOverUpdate()
         gameLevel = 1;
         gamePoints = 0;
         quantInimigos = 0;
+        corBackground = Ponto3d(1, 1, 1);
+        escurecendo = true;
     }
 }
 
